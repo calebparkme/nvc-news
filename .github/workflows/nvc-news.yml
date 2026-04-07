@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout
-        run: git clone https://github.com/calebparkme/nvc-news.git .
+        uses: actions/checkout@v4
 
       - name: Install dependencies
         run: pip install anthropic requests
