@@ -137,6 +137,40 @@ def run_agent() -> dict:
     return EMPTY_RESULT
 
 
+def is_valid_url(url: str) -> bool:
+    """URL에 실제로 접근 가능한지 HEAD 요청으로 확인합니다."""
+    if not url or not url.startswith("http"):
+        return False
+    try:
+        r = requests.head(url, timeout=5, allow_redirects=True,
+                          headers={"User-Agent": "Mozilla/5.0"})
+        if r.status_code < 400:
+            return True
+        # HEAD를 막는 서버는 GET으로 재시도
+        if r.status_code == 405:
+            r = requests.get(url, timeout=5, allow_redirects=True,
+                             headers={"User-Agent": "Mozilla/5.0"})
+            return r.status_code < 400
+        return False
+    except Exception:
+        return False
+
+
+def filter_valid_urls(data: dict) -> dict:
+    """각 항목의 URL을 검증하고 유효하지 않은 항목을 제거합니다."""
+    result = {}
+    for category, items in data.items():
+        valid_items = []
+        for item in items:
+            url = item.get("url", "")
+            if is_valid_url(url):
+                valid_items.append(item)
+            else:
+                print(f"  ⚠️  유효하지 않은 URL 제거: {url}")
+        result[category] = valid_items
+    return result
+
+
 def format_category(items: list) -> str:
     if not items:
         return "오늘은 새로운 소식이 없습니다."
@@ -182,8 +216,11 @@ def main():
 
     data = run_agent()
 
+    print("URL 유효성 검증 중...")
+    data = filter_valid_urls(data)
+
     total = sum(len(v) for v in data.values())
-    print(f"수집된 총 항목 수: {total}")
+    print(f"유효한 항목 수: {total}")
 
     if total == 0:
         print("새로운 NVC 소식이 없어 오늘은 전송을 건너뜁니다.")
