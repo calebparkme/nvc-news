@@ -7,22 +7,34 @@ NVC 일일 뉴스 에이전트
 """
 
 import os
+import re
 import json
+import sys
 import requests
 import anthropic
 from datetime import datetime
 
-DISCORD_WEBHOOK_URL = os.environ["DISCORD_WEBHOOK_URL"]
-ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
+# ── Secrets 확인 ───────────────────────────────────────────────────────────────
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 
+if not ANTHROPIC_API_KEY:
+    print("❌ 오류: ANTHROPIC_API_KEY 가 설정되어 있지 않습니다.")
+    print("   GitHub 저장소 Settings → Secrets → Actions 에서 추가하세요.")
+    sys.exit(1)
+
+if not DISCORD_WEBHOOK_URL:
+    print("❌ 오류: DISCORD_WEBHOOK_URL 이 설정되어 있지 않습니다.")
+    print("   GitHub 저장소 Settings → Secrets → Actions 에서 추가하세요.")
+    sys.exit(1)
+
+# ── 검색 키워드 ────────────────────────────────────────────────────────────────
 SEARCH_KEYWORDS = [
-    # 영어
     "NVC Nonviolent Communication news 2026",
     "NVC Nonviolent Communication workshop 2026",
     "NVC Nonviolent Communication research 2026",
     "NVC Nonviolent Communication training 2026",
     "NVC Nonviolent Communication community 2026",
-    # 한국어
     "비폭력대화 NVC 뉴스 2026",
     "비폭력대화 NVC 워크샵 2026",
     "비폭력대화 NVC 연구 2026",
@@ -68,31 +80,61 @@ PROMPT = """
 항목이 없는 카테고리는 빈 배열 []로 두세요.
 """.strip()
 
+EMPTY_RESULT = {"news": [], "workshop": [], "research": [], "training": [], "community": []}
+
+
+def extract_json(text: str) -> dict:
+    """텍스트에서 JSON을 추출합니다 (마크다운 코드블록 포함)."""
+    text = text.strip()
+
+    # ```json ... ``` 또는 ``` ... ``` 블록 제거
+    match = re.search(r"```(?:json)?\s*(\{[\s\S]*?\})\s*```", text)
+    if match:
+        text = match.group(1)
+    else:
+        # 중괄호로 시작하는 첫 번째 JSON 객체 추출
+        match = re.search(r"\{[\s\S]*\}", text)
+        if match:
+            text = match.group(0)
+
+    return json.loads(text)
+
 
 def run_agent() -> dict:
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-
     prompt = PROMPT.format(keywords="\n".join(f"- {kw}" for kw in SEARCH_KEYWORDS))
 
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=4096,
-        tools=[{"type": "web_search_20250305", "name": "web_search", "max_uses": 12}],
-        messages=[{"role": "user", "content": prompt}],
-    )
+    print("Claude API 호출 중...")
+    try:
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=8096,
+            tools=[{
+                "type": "web_search_20250305",
+                "name": "web_search",
+                "max_uses": 12,
+            }],
+            messages=[{"role": "user", "content": prompt}],
+        )
+    except anthropic.APIError as e:
+        print(f"❌ Anthropic API 오류: {e}")
+        raise
 
-    # 텍스트 블록에서 JSON 추출
-    for block in response.content:
+    print(f"응답 stop_reason: {response.stop_reason}")
+    print(f"응답 블록 수: {len(response.content)}")
+
+    for i, block in enumerate(response.content):
+        print(f"  블록 {i}: type={block.type}")
         if block.type == "text":
-            text = block.text.strip()
-            # JSON 코드블록 제거
-            if text.startswith("```"):
-                text = text.split("```")[1]
-                if text.startswith("json"):
-                    text = text[4:]
-            return json.loads(text.strip())
+            print(f"  텍스트 미리보기: {block.text[:200]}")
+            try:
+                return extract_json(block.text)
+            except (json.JSONDecodeError, AttributeError) as e:
+                print(f"⚠️  JSON 파싱 실패: {e}")
+                print(f"전체 텍스트:\n{block.text}")
 
-    return {"news": [], "workshop": [], "research": [], "training": [], "community": []}
+    print("⚠️  텍스트 블록에서 JSON을 찾지 못했습니다. 빈 결과 반환.")
+    return EMPTY_RESULT
 
 
 def format_category(items: list) -> str:
@@ -127,15 +169,17 @@ def send_to_discord(data: dict):
         }]
     }
 
+    print("Discord 전송 중...")
     r = requests.post(DISCORD_WEBHOOK_URL, json=payload)
     print(f"Discord 전송 결과: HTTP {r.status_code}")
     if r.status_code not in (200, 204):
-        print(r.text)
+        print(f"Discord 응답: {r.text}")
         raise RuntimeError(f"Discord 전송 실패: {r.status_code}")
 
 
 def main():
-    print("NVC 뉴스 수집 시작...")
+    print(f"=== NVC 뉴스 에이전트 시작: {datetime.now().isoformat()} ===")
+
     data = run_agent()
 
     total = sum(len(v) for v in data.values())
@@ -146,7 +190,7 @@ def main():
         return
 
     send_to_discord(data)
-    print("완료!")
+    print("=== 완료 ===")
 
 
 if __name__ == "__main__":
