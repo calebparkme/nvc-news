@@ -1,0 +1,28 @@
+name: NVC Daily News → Discord
+
+on:
+  schedule:
+    - cron: '0 12 * * *'   # 매일 오전 8시 (America/Toronto = UTC-4)
+  workflow_dispatch:         # 수동 실행 버튼
+
+jobs:
+  send-nvc-news:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install anthropic requests
+
+      - name: Run NVC news agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python scripts/nvc_news_agent.py
