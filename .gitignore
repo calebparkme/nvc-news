@@ -1,0 +1,16 @@
+# 민감한 인증 정보
+.credentials.json
+settings.local.json
+
+# 런타임 캐시 및 임시 파일
+cache/
+shell-snapshots/
+file-history/
+backups/
+
+# 대화 기록 (개인정보)
+history.jsonl
+sessions/
+
+# 프로젝트별 로컬 메모리
+projects/
