@@ -107,12 +107,12 @@ def run_agent() -> dict:
     print("Claude API 호출 중...")
     try:
         response = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=8096,
+            model="claude-haiku-4-5-20251001",
+            max_tokens=4096,
             tools=[{
                 "type": "web_search_20250305",
                 "name": "web_search",
-                "max_uses": 12,
+                "max_uses": 6,
             }],
             messages=[{"role": "user", "content": prompt}],
         )
@@ -165,7 +165,7 @@ def send_to_discord(data: dict):
             "title": f"🕊️ NVC 일일 뉴스 브리핑 — {today}",
             "color": 0x3498DB,
             "fields": fields,
-            "footer": {"text": "NVC 뉴스 에이전트 | claude-sonnet-4-6 | GitHub Actions"},
+            "footer": {"text": "NVC 뉴스 에이전트 | claude-haiku-4-5 | GitHub Actions"},
         }]
     }
 
