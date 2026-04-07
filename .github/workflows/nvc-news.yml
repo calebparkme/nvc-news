@@ -6,7 +6,7 @@ on:
   workflow_dispatch:         # 수동 실행 버튼
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   send-nvc-news:
