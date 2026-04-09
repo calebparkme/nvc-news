@@ -30,16 +30,24 @@ if not DISCORD_WEBHOOK_URL:
 
 # ── 검색 키워드 ────────────────────────────────────────────────────────────────
 SEARCH_KEYWORDS = [
+    # NVC 영어
     "NVC Nonviolent Communication news 2026",
     "NVC Nonviolent Communication workshop 2026",
     "NVC Nonviolent Communication research 2026",
     "NVC Nonviolent Communication training 2026",
     "NVC Nonviolent Communication community 2026",
+    # NVC 한국어
     "비폭력대화 NVC 뉴스 2026",
     "비폭력대화 NVC 워크샵 2026",
     "비폭력대화 NVC 연구 2026",
     "비폭력대화 NVC 트레이닝 교육 2026",
     "비폭력대화 NVC 커뮤니티 2026",
+    # 온타리오 사가목 지역
+    "Sagamok Anishnawbek Ontario events 2026",
+    "Sagamok Ontario local news 2026",
+    "Sagamok Ontario mission missionary 2026",
+    "온타리오 사가목 행사 소식 2026",
+    "온타리오 사가목 선교 2026",
 ]
 
 PROMPT = """
@@ -73,6 +81,15 @@ PROMPT = """
     {{"title": "제목(한국어)", "summary": "2~3줄 요약", "url": "https://..."}}
   ],
   "community": [
+    {{"title": "제목(한국어)", "summary": "2~3줄 요약", "url": "https://..."}}
+  ],
+  "sagamok_events": [
+    {{"title": "제목(한국어)", "summary": "2~3줄 요약", "url": "https://..."}}
+  ],
+  "sagamok_news": [
+    {{"title": "제목(한국어)", "summary": "2~3줄 요약", "url": "https://..."}}
+  ],
+  "sagamok_mission": [
     {{"title": "제목(한국어)", "summary": "2~3줄 요약", "url": "https://..."}}
   ]
 }}
@@ -187,11 +204,14 @@ def send_to_discord(data: dict):
     today = datetime.now().strftime("%Y년 %m월 %d일")
 
     fields = [
-        {"name": "📰 NVC 최신 뉴스/기사", "value": format_category(data.get("news", []))[:1024],      "inline": False},
-        {"name": "🏫 NVC 워크샵",         "value": format_category(data.get("workshop", []))[:1024],  "inline": False},
-        {"name": "🔬 NVC 연구/논문",       "value": format_category(data.get("research", []))[:1024],  "inline": False},
-        {"name": "🎓 NVC 트레이닝",        "value": format_category(data.get("training", []))[:1024],  "inline": False},
-        {"name": "🌍 NVC 커뮤니티 소식",   "value": format_category(data.get("community", []))[:1024], "inline": False},
+        {"name": "📰 NVC 최신 뉴스/기사",        "value": format_category(data.get("news", []))[:1024],            "inline": False},
+        {"name": "🏫 NVC 워크샵",                "value": format_category(data.get("workshop", []))[:1024],        "inline": False},
+        {"name": "🔬 NVC 연구/논문",              "value": format_category(data.get("research", []))[:1024],        "inline": False},
+        {"name": "🎓 NVC 트레이닝",               "value": format_category(data.get("training", []))[:1024],        "inline": False},
+        {"name": "🌍 NVC 커뮤니티 소식",          "value": format_category(data.get("community", []))[:1024],       "inline": False},
+        {"name": "📅 사가목 지역 행사",            "value": format_category(data.get("sagamok_events", []))[:1024],  "inline": False},
+        {"name": "📰 사가목 지역 뉴스",            "value": format_category(data.get("sagamok_news", []))[:1024],    "inline": False},
+        {"name": "✝️ 사가목 선교 소식",            "value": format_category(data.get("sagamok_mission", []))[:1024], "inline": False},
     ]
 
     payload = {
