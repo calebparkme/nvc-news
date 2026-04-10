@@ -2,7 +2,7 @@ name: NVC Daily News → Discord
 
 on:
   schedule:
-    - cron: '0 12 * * *'   # 매일 오전 8시 (America/Toronto = UTC-4)
+    - cron: '0 8 * * *'   # 매일 오전 8시 (America/Toronto = UTC-4)
   workflow_dispatch:         # 수동 실행 버튼
 
 jobs:
