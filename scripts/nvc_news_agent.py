@@ -54,7 +54,7 @@ PROMPT = """
 오늘 날짜 기준으로 NVC(비폭력 대화, Nonviolent Communication) 관련 최신 정보를 수집하고
 한국어로 요약·번역한 뒤 아래 JSON 형식으로만 응답하세요.
 
-## 검색 키워드 (10개 모두 검색)
+## 검색 키워드 (아래 키워드 전부 검색)
 {keywords}
 
 ## 수행 절차
@@ -97,7 +97,8 @@ PROMPT = """
 항목이 없는 카테고리는 빈 배열 []로 두세요.
 """.strip()
 
-EMPTY_RESULT = {"news": [], "workshop": [], "research": [], "training": [], "community": []}
+EMPTY_RESULT = {"news": [], "workshop": [], "research": [], "training": [], "community": [],
+                "sagamok_events": [], "sagamok_news": [], "sagamok_mission": []}
 
 
 def extract_json(text: str) -> dict:
@@ -129,7 +130,7 @@ def run_agent() -> dict:
             tools=[{
                 "type": "web_search_20250305",
                 "name": "web_search",
-                "max_uses": 6,
+                "max_uses": 15,
             }],
             messages=[{"role": "user", "content": prompt}],
         )
